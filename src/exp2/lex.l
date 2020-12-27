@@ -27,9 +27,9 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 \/\*(\s|.)*?\*\/    {;}
 {int}       {yylval.type_int=atoi(yytext); return INT;}
 {float}     {yylval.type_float=atof(yytext); return FLOAT;}
-"int"       {strcpy(yylval.type_id,  yytext);return TYPE;}
-"float"     {strcpy(yylval.type_id,  yytext);return TYPE;}
-"char"      {strcpy(yylval.type_id,  yytext);return TYPE;}
+"int"       {strcpy(yylval.type_id,  yytext); return TYPE;}
+"float"     {strcpy(yylval.type_id,  yytext); return TYPE;}
+"char"      {strcpy(yylval.type_id,  yytext); return TYPE;}
 "return"    {return RETURN;}
 "if"        {return IF;}
 "else"      {return ELSE;}
@@ -60,7 +60,7 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 "]"         {return RB;}
 "{"			{return LC;}
 "}"			{return RC;}
-[\n]        {yylineno=1;}   
+[\n]        {yycolumn=1;}   
 [ \r\t]     {;}   
 .			{printf("ERROR! Line %d: %s\n", yylineno, yytext);}
 %%
