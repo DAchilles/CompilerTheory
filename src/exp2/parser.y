@@ -21,7 +21,7 @@ void yyerror(const char* fmt, ...);
 	float   type_float;
     char    type_char;
 	char    type_id[32];
-	struct  node *ptr;
+	struct node *ptr;
 };
 
 /*
@@ -86,7 +86,9 @@ ExtDef:
         $$ = mknode(ARRAY_DEF, $1, $2, NULL, yylineno);
         }
     //报错
-    | error SEMI   {$$=NULL; }
+    | error SEMI {
+        $$ = NULL;
+        }
     ;
 
 /*表示一个类型，int、float和char*/
@@ -101,7 +103,9 @@ Specifier:
 /*变量名称列表，由一个或多个变量组成，多个变量之间用逗号隔开*/
 ExtDecList:
     //每一个EXT_DECLIST的结点，其第一棵子树，对应一个变量名(ID类型的结点)，第二棵子树，对应剩下的外部变量名
-    VarDec {$$=$1;}       
+    VarDec {
+        $$=$1;
+        }       
     | VarDec COMMA ExtDecList {
         $$=mknode(EXT_DEC_LIST,$1,$3,NULL,yylineno);
         }
@@ -380,16 +384,17 @@ Args:
         $$=mknode(ARGS,$1,NULL,NULL,yylineno);
         }
     ; 
-%%
 
-int main(int argc, char *argv[]){
+%%
+int main(int argc, char *argv[])
+{
 	yyin=fopen(argv[1],"r");
 	if (!yyin)
         return -1;
 	yylineno=1;
 	yyparse();
 	return 0;
-	}
+}
 
 #include<stdarg.h>
 void yyerror(const char* fmt, ...)

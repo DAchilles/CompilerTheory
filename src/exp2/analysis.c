@@ -7,24 +7,28 @@ int i=0, j=0, cnt=0;
 
 void display_symbol()
 {
-    int i;
-    printf("\t\t***Symbol Table***\n");
+    int it;
+    printf("\t\tSymbol Table\n");
     printf("---------------------------------------------------\n");
     printf("%s\t%s\t%s\t%s\t%s\t%s\n","Index","Name","Level","Type","Flag","Param_num");
     printf("---------------------------------------------------\n");
-    for(i=0;i<symbol_table.index;i++){
-        printf("%d\t",i);
-        printf("%s\t",symbol_table.symbols[i].name);
-        printf("%d\t",symbol_table.symbols[i].level);
-        if(symbol_table.symbols[i].type==INT)
-               printf("%s\t","int");
-        else if(symbol_table.symbols[i].type==FLOAT)
-            printf("%s\t","float");
+    for(it=0; it<symbol_table.index; it++)
+    {
+        printf("%d\t", it);
+        printf("%s\t", symbol_table.symbols[it].name);
+        printf("%d\t", symbol_table.symbols[it].level);
+        
+        if(symbol_table.symbols[it].type==INT)
+            printf("int\t");
+        else if(symbol_table.symbols[it].type==FLOAT)
+            printf("float\t");
         else
-            printf("%s\t","char");
-        printf("%c\t",symbol_table.symbols[i].flag);
-        if(symbol_table.symbols[i].flag=='F')
-            printf("%d\n",symbol_table.symbols[i].paramnum);
+            printf("char\t");
+        
+        printf("%c\t", symbol_table.symbols[it].flag);
+        
+        if(symbol_table.symbols[it].flag=='F')
+            printf("%d\n", symbol_table.symbols[it].paramnum);
         else
             printf("\n");
     }
@@ -73,6 +77,7 @@ int semantic_analysis(struct node* T,int type,int level,char flag,int command)
                 break;
 	        
 	        case PARAM_LIST:
+                cnt++;
                 semantic_analysis(T->ptr[0], type, level, flag, command);
                 semantic_analysis(T->ptr[1], type, level, flag, command);
                 break;
@@ -147,7 +152,7 @@ int semantic_analysis(struct node* T,int type,int level,char flag,int command)
             case IF_THEN_ELSE:
                 semantic_analysis(T->ptr[0], type, level, flag, command);
                 semantic_analysis(T->ptr[1], type, level, flag, command);
-                semantic_analysis(T->ptr[3], type, level, flag, command);
+                semantic_analysis(T->ptr[2], type, level, flag, command);
                 break;
 
             //FIXME
@@ -163,7 +168,7 @@ int semantic_analysis(struct node* T,int type,int level,char flag,int command)
                     }
                     j++;
                 }
-                if(symbol_table.symbols[j].level==1 || symbol_table.index==j)
+                if(symbol_table.symbols[j].level==1 || j==symbol_table.index)
                 {
                     printf("ERROR! Line %d: Func %s undefined\n", T->position, T->type_id);
                     break;

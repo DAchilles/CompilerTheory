@@ -1,1 +1,6 @@
 sample
+parser.tab.c
+parser.tab.h
+parser.output
+lex.yy.c
+func_test

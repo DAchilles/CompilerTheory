@@ -9,11 +9,11 @@
     /*扩充返回类型YYLVAL*/
     #define YY_USER_ACTION yylloc.first_line=yylloc.last_line=yylineno; yylloc.first_column=yycolumn; yylloc.last_column=yycolumn+yyleng-1; yycolumn+=yyleng;
     typedef union{
-        int type_int;
-        float type_float;
-        char type_char;
-        char type_id[32];
-        struct node *ptr;
+        int     type_int;
+        float   type_float;
+        char    type_char;
+        char    type_id[32];
+        struct  node *ptr;
     }YYLVAL;
     #define YYSTYPE YYLVAL
 %}
@@ -31,10 +31,10 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 "float"     {strcpy(yylval.type_id,  yytext);return TYPE;}
 "char"      {strcpy(yylval.type_id,  yytext);return TYPE;}
 "return"    {return RETURN;}
-"if"        {strcpy(yylval.type_id, yytext); return IF;}
-"else"      {strcpy(yylval.type_id, yytext); return ELSE;}
-"while"     {strcpy(yylval.type_id, yytext); return WHILE;}
-"for"       {strcpy(yylval.type_id, yytext); return FOR;}
+"if"        {return IF;}
+"else"      {return ELSE;}
+"while"     {return WHILE;}
+"for"       {return FOR;}
 {id}        {strcpy(yylval.type_id, yytext); return ID;}
 
 ";"			{return SEMI;}
@@ -62,7 +62,7 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 "}"			{return RC;}
 [\n]        {yylineno=1;}   
 [ \r\t]     {;}   
-.			{printf("ERROR at line%d: %s\n", yylineno, yytext);}
+.			{printf("ERROR! Line %d: %s\n", yylineno, yytext);}
 %%
 
 /* 单独调试词法分析实验时，需要main函数；当与bison联用时，不需要*/
