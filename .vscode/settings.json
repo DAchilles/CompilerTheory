@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "array": "c",
+        "chrono": "c",
+        "functional": "c",
+        "istream": "c",
+        "memory_resource": "c",
+        "ostream": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c"
+    }
+}

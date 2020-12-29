@@ -9,7 +9,8 @@ enum node_kind{
     PARAM_LIST, PARAM_DEC, VAR_DEF, DEC_LIST, DEF_LIST, COMP_STM,
     STM_LIST, EXP_STMT, IF_THEN, IF_THEN_ELSE, FUNC_CALL, ARGS, FUNCTION,
     PARAM, ARG, CALL, LABEL, GOTO, JLT, JLE, JGT, JGE, EQ, NEQ,
-    AUTOADD_L, AUTOADD_R, AUTOSUB_L, AUTOSUB_R, ARRAY_DEF, ARRAY_DEC, ARRAY
+    //AUTOADD_L, AUTOADD_R, AUTOSUB_L, AUTOSUB_R, 
+    ARRAY_DEF, ARRAY_DEC, ARRAY, FOR_DEC
 };
 #define SYMBOLTABLESIZE   1000    //定义符号表的大小
 #define DX 3*sizeof(int)          //活动记录控制信息需要的单元数
@@ -53,6 +54,7 @@ struct node {   //以下对结点属性定义没有考虑存储效率，只是�
     int position;               //语法单位所在位置行号
     int offset;                 //偏移量
     int width;                  //各种数据占用的字节数
+    int num;                    //定义变量的数量
 };
 
 /*符号表中元素结构*/
@@ -84,11 +86,25 @@ struct SymbolScopeArray{
     int top;
 };
 
-
 struct node *mknode(int kind,struct node *first,struct node *second, struct node *third,int position );
 void display(struct node *,int);
-void display_symbol();
-int semantic_analysis(struct node* T,int type,int level,char flag,int command);
-void bool_exp(struct node *T);
+
+void semantic_analysis_init(struct node *T);
+void semantic_analysis(struct node* T);
 void Exp(struct node *T);
-void objectCode(struct codenode *head);
+void ext_var_list(struct node *T);
+void semantic_error(int line, char *msg1, char *msg2);
+int search_symbol_table(char *name);
+int fill_symbol_table(char *name, char *alias, int level, int type, char flag, int offset);
+int temp_add(char *name, int level, int type, char flag, int offset);
+int match_param(int i, struct node *T);
+void bool_exp(struct node *T);
+char *str_catch(char *s1, char *s2);
+char *new_alias();
+char *new_label();
+char *new_temp();
+struct codenode *genIR(int op, struct operandStruct opn1, struct operandStruct opn2, struct operandStruct result);
+struct codenode *genLabel(char *label);
+struct codenode *genGoto(char *label);
+struct codenode *merge(int num, ...);
+void print_IR(struct codenode *head);
