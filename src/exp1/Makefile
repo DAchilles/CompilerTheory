@@ -1,5 +1,5 @@
 src = lex.l parser.y def.h ast.c
-temp = parser.tab.c parser.tab.h lex.yy.c
+temp = parser.tab.c parser.tab.h parser.output lex.yy.c
 
 func_test : $(src)
 	flex lex.l

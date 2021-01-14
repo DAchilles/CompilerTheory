@@ -2,19 +2,19 @@
 
 int LEV = 0;   //层号
 int func_size; //函数的活动记录大小
-struct SymbolTable symbol_table;
-struct SymbolScopeArray symbol_scope;
+struct SymbolTable symbol_table={{0},};
+struct SymbolScopeArray symbol_scope={{0},0};
 
 void semantic_analysis_init(struct node *T)
 {
     symbol_table.index = 0;
-    /*
+    
     fill_symbol_table("read", "", 0, INT, 'F', 4);
     symbol_table.symbols[0].paramnum = 0; //read的形参个数
     fill_symbol_table("x", "", 1, INT, 'P', 12);
     fill_symbol_table("write", "", 0, INT, 'F', 4);
     symbol_table.symbols[2].paramnum = 1;
-    */
+    
     //初始化数据
     symbol_scope.ScopeArray[0] = 0; //外部变量在符号表中的起始序号为0
     symbol_scope.top = 1;
@@ -106,7 +106,7 @@ void semantic_analysis(struct node* T)
                 rtn = fill_symbol_table(T->type_id, new_alias(), LEV, T->type, 'F', 0); //函数不在数据区中分配单元，偏移量为0
                 if (rtn == -1)
                 {
-                    semantic_error(T->position, T->type_id, "函数名重复使用，可能是函数重复定义，语义错误");
+                    semantic_error(T->position, T->type_id, "函数重复定义");
                     return;
                 }
                 else
@@ -128,10 +128,6 @@ void semantic_analysis(struct node* T)
                 }
                 else
                     symbol_table.symbols[rtn].paramnum = 0, T->width = 0;
-                break;
-
-            //FIXME:delete
-            case EXT_DEC_LIST:
                 break;
 	        
 	        case PARAM_LIST:
@@ -159,11 +155,14 @@ void semantic_analysis(struct node* T)
                     semantic_error(T->ptr[1]->position, T->ptr[1]->type_id, "参数名重复定义,语义错误");
                 else
                     T->ptr[1]->place = rtn;
+
                 T->num = 1;                                //参数个数计算的初始值
-                T->width = T->ptr[0]->type == INT ? 4 : 8; //参数宽度
+                T->width = T->ptr[0]->type == INT ? 4 : (T->ptr[0]->type == FLOAT ? 8 : 1); //参数宽度
+                
                 result.kind = ID;
                 strcpy(result.id, symbol_table.symbols[rtn].alias);
                 result.offset = T->offset;
+                
                 T->code = genIR(PARAM, opn1, opn2, result); //生成：FUNCTION 函数名
                 break;
 
@@ -231,10 +230,6 @@ void semantic_analysis(struct node* T)
                     }
                     T0 = T0->ptr[1];
                 }
-                break;
-
-            //FIXME:delete
-            case DEC_LIST:
                 break;
                 
             case DEF_LIST:
@@ -360,7 +355,6 @@ void semantic_analysis(struct node* T)
                 T->code = merge(6, T->ptr[0]->code, genLabel(T->ptr[0]->Etrue), T->ptr[1]->code, genGoto(T->Snext), genLabel(T->ptr[0]->Efalse), T->ptr[2]->code);
                 break;
             
-            //TODO
 	        case RETURN:
                 if (T->ptr[0])
                 {
@@ -372,7 +366,7 @@ void semantic_analysis(struct node* T)
                     while (symbol_table.symbols[num].flag != 'F');
                     if (T->ptr[0]->type != symbol_table.symbols[num].type)
                     {
-                        semantic_error(T->position, "返回值类型错误。", "");
+                        semantic_error(T->position, "返回值类型错误", "");
                         T->width = 0;
                         T->code = NULL;
                         return;
@@ -391,8 +385,18 @@ void semantic_analysis(struct node* T)
                 }
                 break;
 
-            //TODO
             case WHILE:
+                strcpy(T->ptr[0]->Etrue, new_label()); //子结点继承属性的计算
+                strcpy(T->ptr[0]->Efalse, T->Snext);
+                T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
+                bool_exp(T->ptr[0]); //循环条件，要单独按短路代码处理
+                T->width = T->ptr[0]->width;
+                strcpy(T->ptr[1]->Snext, new_label());
+                semantic_analysis(T->ptr[1]); //循环体
+                if (T->width < T->ptr[1]->width)
+                    T->width = T->ptr[1]->width;
+                T->code = merge(5, genLabel(T->ptr[1]->Snext), T->ptr[0]->code,
+                    genLabel(T->ptr[0]->Etrue), T->ptr[1]->code, genGoto(T->ptr[1]->Snext));
                 break;
 
             //FIXME
@@ -462,7 +466,7 @@ void Exp(struct node *T)
 		case ASSIGNOP:
 			if (T->ptr[0]->kind != ID)
 			{
-				semantic_error(T->position, "", "赋值号左边必须为变量。");
+				semantic_error(T->position, "", "赋值号左边必须为变量");
 			}
 			else
 			{
@@ -546,7 +550,7 @@ void Exp(struct node *T)
 				return;
 			}
 			T->type = symbol_table.symbols[rtn].type;
-			width = T->type == INT ? 4 : 8; //存放函数返回值的单数字节数
+			width = T->type == INT ? 4 : (T->ptr[0]->type == FLOAT ? 8 : 1); //参数宽度
 
 			if (T->ptr[0])//有实参
 			{
@@ -610,13 +614,17 @@ void ext_var_list(struct node *T)
     case EXT_DEC_LIST:
         T->ptr[0]->type = T->type;                //将类型属性向下传递变量结点
         T->ptr[0]->offset = T->offset;            //外部变量的偏移量向下传递
+        
         T->ptr[1]->type = T->type;                //将类型属性向下传递变量结点
         T->ptr[1]->offset = T->offset + T->width; //外部变量的偏移量向下传递
         T->ptr[1]->width = T->width;
+        
         ext_var_list(T->ptr[0]);
         ext_var_list(T->ptr[1]);
+        
         T->num = T->ptr[1]->num + 1;
         break;
+    
     case ID:
         rtn = fill_symbol_table(T->type_id, new_alias(), LEV, T->type, 'V', T->offset); //最后一个变量名
         if (rtn == -1)
@@ -625,6 +633,7 @@ void ext_var_list(struct node *T)
             T->place = rtn;
         T->num = 1;
         break;
+
     default:
         break;
     }
@@ -679,12 +688,14 @@ int temp_add(char *name, int level, int type, char flag, int offset)
 
 int match_param(int i, struct node *T)
 {
-    int j, num=symbol_table.symbols[i].paramnum;
+    int j, num = symbol_table.symbols[i].paramnum;
     int type1, type2;
     if(T == NULL)
     {
-        if(num == 0) return 1;
-        else semantic_error(T->position, T->type_id,"函数调用参数个数过少。");
+        if(num == 0)
+            return 1;
+        else
+            semantic_error(T->position, T->type_id,"函数调用参数个数过少。");
     }
     for (j = 1; j < num; j++)
     {
@@ -721,6 +732,7 @@ void bool_exp(struct node *T)
                     T->code = genGoto(T->Efalse);
                 T->width = 0;
                 break;
+
             case FLOAT:
                 if (T->type_float != 0.0)
                     T->code = genGoto(T->Etrue);
@@ -728,26 +740,31 @@ void bool_exp(struct node *T)
                     T->code = genGoto(T->Efalse);
                 T->width = 0;
                 break;
+
             case ID: //查符号表，获得符号表中的位置，类型送type
                 rtn = search_symbol_table(T->type_id);
                 if (rtn == -1)
-                    semantic_error(T->position, T->type_id, "函数未定义，语义错误");
+                    semantic_error(T->position, T->type_id, "函数未定义");
                 if (symbol_table.symbols[rtn].flag == 'F')
-                    semantic_error(T->position, T->type_id, "不是函数名，不能进行函数调用，语义错误");
+                    semantic_error(T->position, T->type_id, "不是函数名，不能进行函数调用");
                 else
                 {
                     opn1.kind = ID;
                     strcpy(opn1.id, symbol_table.symbols[rtn].alias);
                     opn1.offset = symbol_table.symbols[rtn].offset;
+                    
                     opn2.kind = INT;
                     opn2.const_int = 0;
+                    
                     result.kind = ID;
                     strcpy(result.id, T->Etrue);
+                    
                     T->code = genIR(NEQ, opn1, opn2, result);
                     T->code = merge(2, T->code, genGoto(T->Efalse));
                 }
                 T->width = 0;
                 break;
+
             case RELOP: //处理关系运算表达式,2个操作数都按基本表达式处理
                 T->ptr[0]->offset = T->ptr[1]->offset = T->offset;
                 Exp(T->ptr[0]);
@@ -755,14 +772,18 @@ void bool_exp(struct node *T)
                 Exp(T->ptr[1]);
                 if (T->width < T->ptr[1]->width)
                     T->width = T->ptr[1]->width;
+                
                 opn1.kind = ID;
                 strcpy(opn1.id, symbol_table.symbols[T->ptr[0]->place].alias);
                 opn1.offset = symbol_table.symbols[T->ptr[0]->place].offset;
+                
                 opn2.kind = ID;
                 strcpy(opn2.id, symbol_table.symbols[T->ptr[1]->place].alias);
                 opn2.offset = symbol_table.symbols[T->ptr[1]->place].offset;
+                
                 result.kind = ID;
                 strcpy(result.id, T->Etrue);
+                
                 if (strcmp(T->type_id, "<") == 0)
                     op = JLT;
                 else if (strcmp(T->type_id, "<=") == 0)
@@ -775,9 +796,11 @@ void bool_exp(struct node *T)
                     op = EQ;
                 else if (strcmp(T->type_id, "!=") == 0)
                     op = NEQ;
+                
                 T->code = genIR(op, opn1, opn2, result);
                 T->code = merge(4, T->ptr[0]->code, T->ptr[1]->code, T->code, genGoto(T->Efalse));
                 break;
+
             case AND:
             case OR:
                 if (T->kind == AND)
@@ -803,6 +826,7 @@ void bool_exp(struct node *T)
                 else
                     T->code = merge(3, T->ptr[0]->code, genLabel(T->ptr[0]->Efalse), T->ptr[1]->code);
                 break;
+
             case NOT:
                 strcpy(T->ptr[0]->Etrue, T->Efalse);
                 strcpy(T->ptr[0]->Efalse, T->Etrue);
@@ -911,71 +935,91 @@ void print_IR(struct codenode *head)
     {
         if (h->opn1.kind == INT)
             sprintf(opnstr1, "#%d", h->opn1.const_int);
-        if (h->opn1.kind == FLOAT)
+        else if (h->opn1.kind == FLOAT)
             sprintf(opnstr1, "#%f", h->opn1.const_float);
-        if (h->opn1.kind == ID)
+        else if (h->opn1.kind == CHAR)
+            sprintf(opnstr1, "#%c", h->opn1.const_char);
+        else if (h->opn1.kind == ID)
             sprintf(opnstr1, "%s", h->opn1.id);
+        
         if (h->opn2.kind == INT)
             sprintf(opnstr2, "#%d", h->opn2.const_int);
-        if (h->opn2.kind == FLOAT)
+        else if (h->opn2.kind == FLOAT)
             sprintf(opnstr2, "#%f", h->opn2.const_float);
-        if (h->opn2.kind == ID)
+        else if (h->opn2.kind == CHAR)
+            sprintf(opnstr2, "#%c", h->opn2.const_char);
+        else if (h->opn2.kind == ID)
             sprintf(opnstr2, "%s", h->opn2.id);
+        
         sprintf(resultstr, "%s", h->result.id);
+        
         switch (h->op)
         {
-        case ASSIGNOP:
-            printf("  %s := %s\n", resultstr, opnstr1);
-            break;
-        case PLUS:
-        case MINUS:
-        case STAR:
-        case DIV:
-            printf("  %s := %s %c %s\n", resultstr, opnstr1,
-                   h->op == PLUS ? '+' : h->op == MINUS ? '-' : h->op == STAR ? '*' : '\\', opnstr2);
-            break;
-        case FUNCTION:
-            printf("\nFUNCTION %s :\n", h->result.id);
-            break;
-        case PARAM:
-            printf("  PARAM %s\n", h->result.id);
-            break;
-        case LABEL:
-            printf("LABEL %s :\n", h->result.id);
-            break;
-        case GOTO:
-            printf("  GOTO %s\n", h->result.id);
-            break;
-        case JLE:
-            printf("  IF %s <= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case JLT:
-            printf("  IF %s < %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case JGE:
-            printf("  IF %s >= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case JGT:
-            printf("  IF %s > %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case EQ:
-            printf("  IF %s == %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case NEQ:
-            printf("  IF %s != %s GOTO %s\n", opnstr1, opnstr2, resultstr);
-            break;
-        case ARG:
-            printf("  ARG %s\n", h->result.id);
-            break;
-        case CALL:
-            printf("  %s := CALL %s\n", resultstr, opnstr1);
-            break;
-        case RETURN:
-            if (h->result.kind)
-                printf("  RETURN %s\n", resultstr);
-            else
-                printf("  RETURN\n");
-            break;
+            case ASSIGNOP:
+                printf("  %s := %s\n", resultstr, opnstr1);
+                break;
+
+            case PLUS:
+            case MINUS:
+            case STAR:
+            case DIV:
+                printf("  %s := %s %c %s\n", resultstr, opnstr1,
+                    h->op == PLUS ? '+' : h->op == MINUS ? '-' : h->op == STAR ? '*' : '\\', opnstr2);
+                break;
+
+            case FUNCTION:
+                printf("\nFUNCTION %s :\n", h->result.id);
+                break;
+
+            case PARAM:
+                printf("  PARAM %s\n", h->result.id);
+                break;
+
+            case LABEL:
+                printf("LABEL %s :\n", h->result.id);
+                break;
+            case GOTO:
+                printf("  GOTO %s\n", h->result.id);
+                break;
+
+            case JLE:
+                printf("  IF %s <= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+                break;
+
+            case JLT:
+                printf("  IF %s < %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+                break;
+
+            case JGE:
+                printf("  IF %s >= %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+                break;
+
+            case JGT:
+                printf("  IF %s > %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+                break;
+
+            case EQ:
+                printf("  IF %s == %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+                break;
+
+            case NEQ:
+                printf("  IF %s != %s GOTO %s\n", opnstr1, opnstr2, resultstr);
+                break;
+
+            case ARG:
+                printf("  ARG %s\n", h->result.id);
+                break;
+
+            case CALL:
+                printf("  %s := CALL %s\n", resultstr, opnstr1);
+                break;
+
+            case RETURN:
+                if (h->result.kind)
+                    printf("  RETURN %s\n", resultstr);
+                else
+                    printf("  RETURN\n");
+                break;
         }
         h = h->next;
     } while (h != head);

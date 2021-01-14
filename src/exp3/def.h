@@ -10,7 +10,7 @@ enum node_kind{
     STM_LIST, EXP_STMT, IF_THEN, IF_THEN_ELSE, FUNC_CALL, ARGS, FUNCTION,
     PARAM, ARG, CALL, LABEL, GOTO, JLT, JLE, JGT, JGE, EQ, NEQ,
     //AUTOADD_L, AUTOADD_R, AUTOSUB_L, AUTOSUB_R, 
-    ARRAY_DEF, ARRAY_DEC, ARRAY, FOR_DEC
+    ARRAY_DEF, ARRAY_DEC, ARRAY
 };
 #define SYMBOLTABLESIZE   1000    //定义符号表的大小
 #define DX 3*sizeof(int)          //活动记录控制信息需要的单元数
@@ -63,7 +63,7 @@ struct symbol{  //这里只列出了一个符号表项的部分属性，没考�
     int level;                  //层号，外部变量名或函数名，层号为0；形参为1；进入复合语句加1，退出减1
     int type;                   //变量类型或函数返回值类型
     int  paramnum;              //形式参数个数
-    char alias[10];             //别名，为解决嵌套层次使用，可以使每个数据名称唯一
+    char alias[33];             //别名，为解决嵌套层次使用，可以使每个数据名称唯一
     char flag;                  //符号标记缩写，函数：'F'  变量：'V'   参数：'P'  临时变量：'T'
     char offset;                //外部变量和局部变量，在其静态数据区或活动记录中的偏移量 或 函数活动记录大小，目标代码生成时使用
     //其它你需要补充的信息可以增加保存...

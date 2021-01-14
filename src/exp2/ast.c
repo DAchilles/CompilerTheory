@@ -12,6 +12,9 @@ struct node *mknode(int kind, struct node *first, struct node *second, struct no
     return T;
 }
 
+struct SymbolTable symbol_table={{0},};
+struct SymbolScopeArray symbol_scope={{0},0};
+
 //对抽象语法树的先根遍历
 void display(struct node *T,int indent)
 {
@@ -48,7 +51,6 @@ void display(struct node *T,int indent)
                 display(T->ptr[0],indent+5);  //显示函数参数列表
                 break;
 
-            //TODO
             case EXT_DEC_LIST:
                 display(T->ptr[0],indent);     //依次显示外部变量名，
                 display(T->ptr[1],indent);     //后续还有相同的，仅显示语法树此处理代码可以和类似代码合并
@@ -142,8 +144,6 @@ void display(struct node *T,int indent)
                     display(T0,indent+5);
                     T=T->ptr[1];
                 }
-                //printf("%*c第%d个实际参数表达式：\n",indent,' ',i);
-                //displayAST(T,indent+5);
                 printf("\n");
                 break;
 
@@ -154,14 +154,6 @@ void display(struct node *T,int indent)
 
             case WHILE:
                 printf("%*cwhile循环语句：\n",indent,' ');
-                printf("%*c循环条件：\n",indent+5,' ');
-                display(T->ptr[0],indent+10);      //显示循环条件
-                printf("%*c循环体：\n",indent+5,' ');
-                display(T->ptr[1],indent+10);      //显示循环体
-                break;
-
-            case FOR:
-                printf("%*cfor循环语句：\n",indent,' ');
                 printf("%*c循环条件：\n",indent+5,' ');
                 display(T->ptr[0],indent+10);      //显示循环条件
                 printf("%*c循环体：\n",indent+5,' ');
@@ -184,16 +176,25 @@ void display(struct node *T,int indent)
                 printf("%*cCHAR：%c\n",indent,' ',T->type_char);
                 break;
             
+            case ARRAY:
+                printf("%*cARRAY: %s\n",indent,' ',T->type_id);
+                break;
+            
             case TYPE:
-                if(T->type==INT)
-                    printf("%*c类型: int\n",indent,' ');
-                else if(T->type==FLOAT)
-                    printf("%*c类型: float\n",indent,' ');
-                else if(T->type==CHAR)
-                    printf("%*c类型: char\n",indent,' ');
-                else if(T->type==ARRAY)
-                    printf("%*c类型: char[]\n",indent,' ');
+                printf("%*ctype: %s\n",indent,' ', T->type_id);
                 break; 
+
+            case ARRAY_DEF:
+                printf("%*c数组定义：\n",indent,' ');
+                display(T->ptr[0],indent+5);
+                display(T->ptr[1],indent+5);
+                break;
+
+            case ARRAY_DEC:
+                printf("%*c数组名：%s\n",indent,' ',T->type_id);
+                printf("%*c数组大小：\n",indent,' ');
+                display(T->ptr[0],indent+5);
+                break;
 
             case ASSIGNOP:
             case AND:
@@ -203,14 +204,6 @@ void display(struct node *T,int indent)
             case MINUS:
             case STAR:
             case DIV:
-            case COMADD:
-            case COMSUB:
-            case COMSTAR:
-            case COMDIV:
-            case AUTOADD_L:
-            case AUTOSUB_L:
-            case AUTOADD_R:
-            case AUTOSUB_R:
                 printf("%*c%s\n",indent,' ',T->type_id);
                 display(T->ptr[0],indent+5);
                 display(T->ptr[1],indent+5);

@@ -1,4 +1,3 @@
-%option yylineno
 /*定义*/
 %{
     #include "parser.tab.h"     /*需要与bison联动后加上*/
@@ -18,6 +17,7 @@
     #define YYSTYPE YYLVAL
 %}
 
+%option yylineno
 id      [A-Za-z][A-Za-z0-9]*  
 int     [0-9]+
 float   ([0-9]*\.[0-9]+)|([0-9]+\.)
@@ -34,7 +34,6 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 "if"        {return IF;}
 "else"      {return ELSE;}
 "while"     {return WHILE;}
-"for"       {return FOR;}
 {id}        {strcpy(yylval.type_id, yytext); return ID;}
 
 ";"			{return SEMI;}
@@ -45,12 +44,6 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 "-"			{return MINUS;}
 "*"			{return STAR;}
 "/"			{return DIV;}
-"++"        {return AUTOADD;}
-"--"        {return AUTOSUB;}
-"+="        {return COMADD;}
-"-="        {return COMSUB;}
-"*="        {return COMSTAR;}
-"/="        {return COMDIV;}
 "&&"        {return AND;}
 "||"        {return OR;}
 "!"			{return NOT;}
@@ -64,16 +57,3 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 [ \r\t]     {;}   
 .			{printf("ERROR! Line %d: %s\n", yylineno, yytext);}
 %%
-
-/* 单独调试词法分析实验时，需要main函数；当与bison联用时，不需要*/
-/*
-int main()
-{
-    yylex();
-    return 0;
-}
-*/
-int yywrap()
-{
-    return 1;
-}

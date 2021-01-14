@@ -174,12 +174,6 @@ void display(struct node *T,int indent)
                 display(T->ptr[1],indent+10);      //显示循环体
                 break;
 
-            case FOR_DEC:
-                display(T->ptr[0], indent + 6);
-                display(T->ptr[1], indent + 6);
-                display(T->ptr[2], indent + 6);
-                break;
-
             case ID:
                 printf("%*cID： %s\n",indent,' ',T->type_id);
                 break;

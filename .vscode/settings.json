@@ -9,6 +9,10 @@
         "ratio": "c",
         "tuple": "c",
         "type_traits": "c",
-        "utility": "c"
+        "utility": "c",
+        "iostream": "cpp",
+        "shared_mutex": "cpp",
+        "random": "cpp",
+        "*.tcc": "cpp"
     }
 }

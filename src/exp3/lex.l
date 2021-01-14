@@ -37,7 +37,6 @@ float   ([0-9]*\.[0-9]+)|([0-9]+\.)
 "if"        {return IF;}
 "else"      {return ELSE;}
 "while"     {return WHILE;}
-"for"       {return FOR;}
 
 {id}        {strcpy(yylval.type_id, yytext); return ID;}
 

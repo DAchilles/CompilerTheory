@@ -9,7 +9,7 @@ enum node_kind{
     PARAM_LIST, PARAM_DEC, VAR_DEF, DEC_LIST, DEF_LIST, COMP_STM,
     STM_LIST, EXP_STMT, IF_THEN, IF_THEN_ELSE, FUNC_CALL, ARGS, FUNCTION,
     PARAM, ARG, CALL, LABEL, GOTO, JLT, JLE, JGT, JGE, EQ, NEQ,
-    AUTOADD_L, AUTOADD_R, AUTOSUB_L, AUTOSUB_R, ARRAY_DEF, ARRAY_DEC, ARRAY
+    ARRAY_DEF, ARRAY_DEC, ARRAY
 };
 #define SYMBOLTABLESIZE   1000    //定义符号表的大小
 #define DX 3*sizeof(int)          //活动记录控制信息需要的单元数
@@ -49,7 +49,7 @@ struct node {   //以下对结点属性定义没有考虑存储效率，只是�
     char Snext[15];             //该结点对应语句执行后的下一条语句位置标号
     struct codenode *code;      //该结点中间代码链表头指针
     char op[10];
-    int  type;                  //结点对应值的类型
+    int type;                  //结点对应值的类型
     int position;               //语法单位所在位置行号
     int offset;                 //偏移量
     int width;                  //各种数据占用的字节数

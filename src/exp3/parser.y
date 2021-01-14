@@ -29,7 +29,7 @@ void yyerror(const char* fmt, ...);
 用<>选择union中某个类型，
 后面列出同类型的非终结符
 */
-%type <ptr> Program ExtDefList ExtDef Specifier ExtDecList FuncDec ArrayDec CompSt VarList VarDec ParamDec Stmt StmList DefList Def DecList Dec Exp Args ForDec
+%type <ptr> Program ExtDefList ExtDef Specifier ExtDecList FuncDec ArrayDec CompSt VarList VarDec ParamDec Stmt StmList DefList Def DecList Dec Exp Args
 
 /* 用%token来指定终结符的语义值类型，与非终结符类似*/
 %token <type_int> INT                   //指定是type_int类型，用于AST树建立
@@ -56,7 +56,7 @@ void yyerror(const char* fmt, ...);
 /*显示语法树*/
 Program:
     ExtDefList {
-        display($1,0);
+        /*display($1,0);*/
         semantic_analysis_init($1);
         }
     ;
@@ -133,7 +133,7 @@ FuncDec:
         }
     | error RP {
         $$=NULL;
-        printf("---函数左括号右括号不匹配---\n");
+        /*printf("---函数左括号右括号不匹配---\n");*/
         }
     ;
 
@@ -149,7 +149,7 @@ ArrayDec:
         }
     | error RB {
         $$=NULL;
-        printf("---数组定义错误---\n");
+        /*printf("---数组定义错误---\n");*/
     }
     ;
 
@@ -176,7 +176,7 @@ CompSt:
         }
     | error RC {
         $$=NULL;
-        printf("---复合语句错误---\n");
+        /*printf("---复合语句错误---\n");*/
         }
     ;
 
@@ -208,15 +208,6 @@ Stmt:
         }
     | WHILE LP Exp RP Stmt {
         $$=mknode(WHILE,$3,$5,NULL,yylineno);
-        }
-    | FOR LP ForDec RP Stmt {
-        $$=mknode(FOR,$3,$5,NULL,yylineno);
-        }
-    ;
-
-ForDec:
-    Exp SEMI Exp SEMI Exp {
-        $$=mknode(FOR_DEC,$1,$3,$5,yylineno);
         }
     ;
     

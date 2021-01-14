@@ -36,17 +36,17 @@ void yyerror(const char* fmt, ...);
 %token <type_id> ID RELOP TYPE          //指定是type_id 类型
 %token <type_float> FLOAT               //指定是type_float类型
 %token <type_char> CHAR                 //指定是type_char类型
-%token LP RP LB RB LC RC SEMI COMMA   
-%token PLUS MINUS STAR DIV ASSIGNOP AND OR NOT IF ELSE WHILE FOR RETURN COMADD COMSUB COMSTAR COMDIV
 
-%left COMADD COMSUB COMSTAR COMDIV
+%token LP RP LB RB LC RC SEMI COMMA   
+%token PLUS MINUS STAR DIV ASSIGNOP AND OR NOT IF ELSE WHILE RETURN
+
 %left ASSIGNOP
 %left OR
 %left AND
 %left RELOP
 %left PLUS MINUS
 %left STAR DIV
-%right UMINUS NOT AUTOADD AUTOSUB
+%right UMINUS NOT
 /*%nonassoc的含义是没有结合性,它一般与%prec结合使用表示该操作有同样的优先级*/
 %nonassoc LOWER_THEN_ELSE
 %nonassoc ELSE
@@ -209,9 +209,6 @@ Stmt:
     | WHILE LP Exp RP Stmt {
         $$=mknode(WHILE,$3,$5,NULL,yylineno);
         }
-    | FOR LP Exp RP Stmt {
-        $$=mknode(FOR,$3,$5,NULL,yylineno);
-        }
     ;
 
 /*定义列表，由0个或多个定义语句组成*/
@@ -256,6 +253,7 @@ Dec:
 /*表达式*/
 Exp:
     //$$结点type_id空置未用，正好存放运算符
+    // "="
     Exp ASSIGNOP Exp {
         $$=mknode(ASSIGNOP,$1,$3,NULL,yylineno);
         strcpy($$->type_id,"ASSIGNOP");
@@ -295,46 +293,6 @@ Exp:
         $$=mknode(DIV,$1,$3,NULL,yylineno);
         strcpy($$->type_id,"DIV");
         }
-    // "+="
-    | Exp COMADD Exp {
-        $$=mknode(COMADD,$1,$3,NULL,yylineno);
-        strcpy($$->type_id,"COMADD");
-        }
-    // "-="
-    | Exp COMSUB Exp {
-        $$=mknode(COMSUB,$1,$3,NULL,yylineno);
-        strcpy($$->type_id,"COMSUB");
-        }
-    // "*="
-    | Exp COMSTAR Exp {
-        $$=mknode(COMSTAR,$1,$3,NULL,yylineno);
-        strcpy($$->type_id,"COMSTAR");
-        }
-    // "/="
-    | Exp COMDIV Exp {
-        $$=mknode(COMDIV,$1,$3,NULL,yylineno);
-        strcpy($$->type_id,"COMDIV");
-        }
-    // "++i"
-    | AUTOADD Exp {
-        $$=mknode(AUTOADD_L,$2,NULL,NULL,yylineno);
-        strcpy($$->type_id,"AUTOADD");
-        }
-    // "--i"
-    | AUTOSUB Exp {
-        $$=mknode(AUTOSUB_L,$2,NULL,NULL,yylineno);
-        strcpy($$->type_id,"AUTOSUB");
-        }
-    // "i++"
-    | Exp AUTOADD {
-        $$=mknode(AUTOADD_R,$1,NULL,NULL,yylineno);
-        strcpy($$->type_id,"AUTOADD");
-        }
-    // "i--"
-    | Exp AUTOSUB {
-        $$=mknode(AUTOSUB_R,$1,NULL,NULL,yylineno);
-        strcpy($$->type_id,"AUTOSUB");
-        }
     //遇到左右括号，可直接忽略括号，Exp的值就为括号里面的Exp
     | LP Exp RP {
         $$=$2;
@@ -353,6 +311,10 @@ Exp:
         }
     | ID LP RP {
         $$=mknode(FUNC_CALL,NULL,NULL,NULL,yylineno);
+        strcpy($$->type_id,$1);
+        }
+    | ID LB Exp RB {
+        $$=mknode(ARRAY_DEC,$3,NULL,NULL,yylineno);
         strcpy($$->type_id,$1);
         }
     | ID {
